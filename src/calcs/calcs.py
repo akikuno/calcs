@@ -1,6 +1,8 @@
 import pysam
 import argparse
 import sys
+import numpy as np
+import pandas as pd
 
 
 def main():
@@ -14,7 +16,7 @@ def main():
         for s in f:
             row = s.strip().split("\t")
             file.append(row)
-        print(file)
+        print(pd.DataFrame(file))
 
 
 if __name__ == "__main__":
