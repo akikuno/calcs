@@ -1,14 +1,19 @@
 # calcs - Generate the CS tag from SAM/BAM/CRAM
 
+## Description
+
+Generate the [minimap2's CS tag](https://github.com/lh3/minimap2#cs).  
+If the CS tag is already present, this command will overwrite the existing tag.
+
 ## Installation
 
-You can install calcs using pip:
+You can install `calcs` using pip:
 
 ```bash
 pip install calcs
 ```
 
-Alternatively, you can get calcs from bioconda:
+Alternatively, you can get `calcs` from bioconda:
 
 ```
 conda install -c bioconda calcs
@@ -19,10 +24,6 @@ conda install -c bioconda calcs
 ```bash
 calcs aln.sam -r ref.fasta > aln_cs.sam
 ```
-
-## Description
-
-Generate the CS tag. If the CS tag is already present, this command will give a warning if the CS tag generated is different from the existing tag.
 
 
 ## Options
@@ -35,14 +36,15 @@ Generate the CS tag. If the CS tag is already present, this command will give a 
 ## Examples
 
 ```bash
-calcs -b -t 2 examples/test.sam examples/ref.fa > test_cs.sam
+calcs -b -t 2 examples/test.sam -r examples/ref.fa > test_cs.sam
 ```
 
+If input file is a BAM format, you can use `samtools`.
+
 ```bash
-# Input BAM file via stdin
 samtools view examples/test.bam |
-  calcs -b -t 2 examples/ref.fa |
-  samtools sort > test_cs.bam
+  calcs -l -t 2 -r examples/ref.fa |
+  samtools sort > test_cs_long.bam
 ```
 
 ## Citation
