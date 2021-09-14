@@ -30,20 +30,21 @@ calcs aln.sam -r ref.fasta > aln_cs.sam
 ## Options
 
 ```bash
--l, --long: Encoding the long form of cs tag (default: false).
--t, --threads INT: Number of threads to use (default: 1).
+-r, --reference: reference fasta file (required
+-l, --long: Encoding the long form of cs tag (default: false)
+-@, --threads INT: Number of threads to use (default: 1)
 ```
 
 ## Examples
 
 ```bash
-calcs examples/test.sam -r examples/ref.fa > test_cs.sam
+calcs examples/aln.sam -r examples/ref.fa > aln_cs.sam
 ```
 
 If input file is a BAM/CRAN format, you can use `samtools view`.
 
 ```bash
-samtools view examples/test.bam |
+samtools view examples/aln.bam |
   calcs -l -r examples/ref.fa
 ```
 
