@@ -17,7 +17,7 @@ conda install -c bioconda calcs
 ## Getting Started
 
 ```bash
-calcs aln.sam ref.fasta > aln_cs.sam
+calcs aln.sam -r ref.fasta > aln_cs.sam
 ```
 
 ## Description
@@ -28,6 +28,7 @@ Generate the CS tag. If the CS tag is already present, this command will give a 
 ## Options
 
 ```bash
+-l, --long: Encoding the long form of cs tag (default: false).
 -t, --threads INT: Number of threads to use (default: 1).
 ```
 

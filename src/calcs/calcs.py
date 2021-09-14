@@ -1,41 +1,44 @@
-import pysam
 import argparse
 import sys
 import numpy as np
 import pandas as pd
+import os
 
 
-def main():
+def _argparse():
     parser = argparse.ArgumentParser()
-    parser.add_argument('infile', nargs='?', type=argparse.FileType(),
+    parser.add_argument('infile', nargs='?', type=argparse.FileType("r"),
                         default=sys.stdin)
+    parser.add_argument("-r", "--reference", required=True)
+    parser.add_argument("-l", "--long", action="store_true")
+    parser.add_argument("-t", "--threads", default=1, type=int)
     args = parser.parse_args()
 
-    file = []
+    query = []
     with args.infile as f:
         for s in f:
             row = s.strip().split("\t")
-            file.append(row)
-        print(pd.DataFrame(file))
+            query.append(row)
+
+    reference = []
+    with open(args.reference) as f:
+        for s in f:
+            row = s.strip().split("\t")
+            reference.append(row)
+
+    if args.threads > len(os.sched_getaffinity(0)):
+        threads = len(os.sched_getaffinity(0))
+    elif args.threads < 1:
+        threads = 1
+    else:
+        threads = args.threads
+
+    return query, reference, args.long, threads
 
 
 if __name__ == "__main__":
-    main()
-
-# parser = argparse.ArgumentParser(
-#     description='このプログラムの説明（なくてもよい）')    # 2. パーサを作る
-
-# for x in dir(pysam):
-#     print(x, ':', type(eval("pysam."+x)))
-
-# samfile = pysam.AlignmentFile("tests/deletion/test_del.sam", "r")
-# samfile
-
-# pysam.calmd("tests/deletion/test_del.sam", "tests/deletion/test_ref.fa")
-
-# pysam.sort("-o", "tmp.bam", "tests/deletion/test_del.sam")
-
-# subprocess.run(
-#     ["samtools", "calmd", "tests/deletion/test_del.sam", "tests/deletion/test_ref.fa"])
-
-# pysam.calmd
+    query, reference, long, threads = _argparse()
+    print(query)
+    print(reference)
+    print(long)
+    print(threads)
