@@ -1,6 +1,6 @@
 ## Description
 
-Generate the [minimap2's CS tag](https://github.com/lh3/minimap2#cs) to SAM file.  
+Append the [minimap2's CS tag](https://github.com/lh3/minimap2#cs) to SAM file.  
 If the CS tag is already present, this command will overwrite the existing tag.
 
 
