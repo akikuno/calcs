@@ -37,14 +37,14 @@ calcs aln.sam -r ref.fasta > aln_cs.sam
 ## Examples
 
 ```bash
-calcs -b -t 2 examples/test.sam -r examples/ref.fa > test_cs.sam
+calcs examples/test.sam -r examples/ref.fa > test_cs.sam
 ```
 
 If input file is a BAM format, you can use `samtools`.
 
 ```bash
 samtools view examples/test.bam |
-  calcs -l -t 2 -r examples/ref.fa |
+  calcs -l -r examples/ref.fa |
   samtools sort > test_cs_long.bam
 ```
 
