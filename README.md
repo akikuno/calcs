@@ -40,12 +40,11 @@ calcs aln.sam -r ref.fasta > aln_cs.sam
 calcs examples/test.sam -r examples/ref.fa > test_cs.sam
 ```
 
-If input file is a BAM format, you can use `samtools`.
+If input file is a BAM/CRAN format, you can use `samtools view`.
 
 ```bash
 samtools view examples/test.bam |
-  calcs -l -r examples/ref.fa |
-  samtools sort > test_cs_long.bam
+  calcs -l -r examples/ref.fa
 ```
 
 ## Citation
