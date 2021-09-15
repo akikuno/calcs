@@ -1,44 +1,39 @@
+# from parser import parser
+from itertools import compress
+import formatter
 import argparse
 import sys
-import numpy as np
-import pandas as pd
-import os
+
+parser = argparse.ArgumentParser()
+parser.add_argument('query', nargs="?", type=argparse.FileType("r"),
+                    default=sys.stdin,
+                    help="Give the full path to a SAM file")
+parser.add_argument("-r", "--reference", required=True,
+                    help="Give the full path to a reference FASTA file")
+parser.add_argument("-l", "--long", action="store_true",
+                    help="Output the cs tag in the long form")
+parser.add_argument("-p", "--paf", action="store_true",
+                    help="Output PAF")
+parser.add_argument("-@", "--threads", default=1, type=int,
+                    help="Number of threads [default: 1]")
+args = parser.parse_args()
 
 
-def _argparse():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('infile', nargs='?', type=argparse.FileType("r"),
-                        default=sys.stdin)
-    parser.add_argument("-r", "--reference", required=True)
-    parser.add_argument("-l", "--long", action="store_true")
-    parser.add_argument("-@", "--threads", default=1, type=int)
-    args = parser.parse_args()
+query = []
+with args.query as f:
+    for s in f:
+        row = s.strip()
+        query.append(row)
 
-    query = []
-    with args.infile as f:
-        for s in f:
-            row = s.strip().split("\t")
-            query.append(row)
+header = [s.startswith("@") for s in query]
+print(list(compress(query, header)))
 
-    reference = []
-    with open(args.reference) as f:
-        for s in f:
-            row = s.strip().split("\t")
-            reference.append(row)
-
-    if args.threads > len(os.sched_getaffinity(0)):
-        threads = len(os.sched_getaffinity(0))
-    elif args.threads < 1:
-        threads = 1
-    else:
-        threads = args.threads
-
-    return query, reference, args.long, threads
-
+# print(query)
 
 if __name__ == "__main__":
-    query, reference, long, threads = _argparse()
-    print(query)
-    print(reference)
-    print(long)
-    print(threads)
+    # query, reference, long, paf, threads = parser()
+    print(args.query)
+    print(args.reference)
+    print(args.long)
+    print(args.paf)
+    print(args.threads)
