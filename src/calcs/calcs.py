@@ -11,7 +11,7 @@ def _argparse():
                         default=sys.stdin)
     parser.add_argument("-r", "--reference", required=True)
     parser.add_argument("-l", "--long", action="store_true")
-    parser.add_argument("-t", "--threads", default=1, type=int)
+    parser.add_argument("-@", "--threads", default=1, type=int)
     args = parser.parse_args()
 
     query = []
