@@ -25,14 +25,23 @@ import sys
 # arg.reference="tests/random_100bp.fa"
 # ! posicon
 subprocess.run(["cat", "tests/deletion/del.sam"])
+subprocess.run(["cat", "tests/deletion/del_cs.sam"])
 subprocess.run(["cat", "tests/deletion/del_cslong.sam"])
 ###
 
+file_que_sam = "tests/subindel/subindel.sam"
+file_ref_fasta = "tests/random_100bp.fa"
+
+###############################################################################
+# Parse query SAM
+###############################################################################
+
 que_sam = []
-with open("tests/deletion/del.sam") as f:
+append = que_sam.append
+with open(file_que_sam) as f:
     for s in f:
         row = s.strip()
-        que_sam.append(row)
+        append(row)
 
 header_idx = [_.startswith("@") for _ in que_sam]
 body_idx = [not _ for _ in header_idx]
@@ -43,29 +52,48 @@ body = list(compress(que_sam, body_idx))
 cigar = [s.split("\t")[5] for s in body]
 que_seq = [s.split("\t")[9] for s in body]
 
+###############################################################################
+# Parse reference FASTA
+###############################################################################
+
 ref_fasta = []
-with open("tests/random_100bp.fa") as f:
+append = ref_fasta.append
+with open(file_ref_fasta) as f:
     for s in f:
         row = s.strip()
-        ref_fasta.append(row)
+        append(row)
 
 ref_seq_idx = [not _.startswith(">") for _ in ref_fasta]
 ref_seq = list(compress(ref_fasta, ref_seq_idx))
 
-cigar
-que_seq
-ref_seq
+###############################################################################
+# Remove soft/hard clipping
+###############################################################################
+
+clip_idx = ["S" in _ for _ in cigar]
+cigar_clip = list(compress(cigar, clip_idx))
+
+list(compress(cigar, clip_idx))
+list(compress(que_seq, clip_idx))
 
 
 def cigarsplit(s):
     group_by = 2
-    s_split = re.split("(\d+)", s)[1:]
+    s_split = re.split(r"(\d+)", s)[1:]
     s_group_by = [s_split[i:i + group_by]
                   for i in range(0, len(s_split), group_by)]
     return s_group_by
 
 
-[cigarsplit(s) for s in cigar]
+tmp = [cigarsplit(s) for s in cigar]
+
+tmp2 = int(tmp[0][0][0]) * tmp[0][0][1]
+
+int(tmp[0][0][0]) * tmp[0][0][1]
+
+int(tmp[1][0][0]) * tmp[1][0][1]
+2 * "M"
+[s[1] * s[0] for s in tmp]
 
 # *TEST========================================================
 
