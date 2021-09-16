@@ -1,4 +1,6 @@
 # from parser import parser
+import re
+import subprocess
 from itertools import compress
 # import formatter
 import argparse
@@ -21,6 +23,10 @@ import sys
 # *TEST========================================================
 # arg.query=open("tests/deletion/del.sam")
 # arg.reference="tests/random_100bp.fa"
+# ! posicon
+subprocess.run(["cat", "tests/deletion/del.sam"])
+subprocess.run(["cat", "tests/deletion/del_cslong.sam"])
+###
 
 que_sam = []
 with open("tests/deletion/del.sam") as f:
@@ -46,6 +52,20 @@ with open("tests/random_100bp.fa") as f:
 ref_seq_idx = [not _.startswith(">") for _ in ref_fasta]
 ref_seq = list(compress(ref_fasta, ref_seq_idx))
 
+cigar
+que_seq
+ref_seq
+
+
+def cigarsplit(s):
+    group_by = 2
+    s_split = re.split("(\d+)", s)[1:]
+    s_group_by = [s_split[i:i + group_by]
+                  for i in range(0, len(s_split), group_by)]
+    return s_group_by
+
+
+[cigarsplit(s) for s in cigar]
 
 # *TEST========================================================
 
