@@ -46,6 +46,7 @@ with open("tests/random_100bp.fa") as f:
 ref_seq_idx = [not _.startswith(">") for _ in ref_fasta]
 ref_seq = list(compress(ref_fasta, ref_seq_idx))
 
+
 # *TEST========================================================
 
 # print(query)
