@@ -1,7 +1,6 @@
 # from parser import parser
-from itertools import zip_longest
+from src.calcs import call_cs
 import re
-import subprocess
 from itertools import compress
 # import formatter
 import argparse
@@ -43,9 +42,9 @@ body_idx = [not _ for _ in header_idx]
 header = list(compress(que_sam, header_idx))
 body = list(compress(que_sam, body_idx))
 
-start = [int(s.split("\t")[3]) - 1 for s in body]
-cigar = [s.split("\t")[5] for s in body]
-que_seq = [s.split("\t")[9] for s in body]
+starts = [int(s.split("\t")[3]) - 1 for s in body]
+cigars = [s.split("\t")[5] for s in body]
+que_seqs = [s.split("\t")[9] for s in body]
 
 ###############################################################################
 # Parse reference FASTA
@@ -59,20 +58,31 @@ with open(file_ref_fasta) as f:
         append(row)
 
 ref_seq_idx = [not _.startswith(">") for _ in ref_fasta]
-ref_seq = list(compress(ref_fasta, ref_seq_idx)) * len(que_seq)
+ref_seqs = list(compress(ref_fasta, ref_seq_idx)) * len(que_seqs)
 
 ###############################################################################
-# Remove soft/hard clip in query sequence
+# Trim start sites in reference
 ###############################################################################
 
 
-def count_clip(cigar_str):
-    _left_clip = re.sub(r'(S|H).*', '', cigar_str)
+def trim_starts(ref_seq: str, start: int) -> str:
+    return ref_seq[start or None:]
+
+
+ref_seqs_trimed = list(map(trim_starts, ref_seqs, starts))
+
+###############################################################################
+# Trim soft/hard clip in query
+###############################################################################
+
+
+def count_clip(cigar):
+    _left_clip = re.sub(r'(S|H).*', '', cigar)
     if re.search(r"[A-Z]", _left_clip):
         left_clip_length = 0
     else:
         left_clip_length = int(_left_clip)
-    _right_clip = re.sub(r'.*[A-Z]([0-9]+)(S|H)$', r"\1", cigar_str)
+    _right_clip = re.sub(r'.*[A-Z]([0-9]+)(S|H)$', r"\1", cigar)
     if re.search(r"[A-Z]", _right_clip):
         right_clip_length = 0
     else:
@@ -80,83 +90,87 @@ def count_clip(cigar_str):
     return left_clip_length, right_clip_length
 
 
-clip_length = list(map(count_clip, cigar))
+clip_length = list(map(count_clip, cigars))
 
-que_seq_clipped = []
-append = que_seq_clipped.append
+que_seqs_clipped = []
+append = que_seqs_clipped.append
 
-for idx, (seq, clip) in enumerate(zip(que_seq, clip_length)):
+for idx, (seq, clip) in enumerate(zip(que_seqs, clip_length)):
     left, right = clip
     seq = seq[left or None: -right or None]
     append(seq)
 
-que_seq_clipped
+que_seqs_clipped
 
 ###############################################################################
 # Annotate Insertion in reference
 ###############################################################################
 
-tmp_ref_seq: str = "AAATTT"
-cigar_str: str = "3M2I2D3M"
-expected = "AAAIITTT"
-tmp_ref_seq[:3] + int(2) * "I" + tmp_ref_seq[3:6]
+# re.sub("[0-9]+(S|H)", "", "11115H100M51111S")
 
-# cigar_split = re.split("([0-9]+I)", cigar_str)
 
-ref_seq_ins_annotated = []
-append = ref_seq_ins_annotated.append
-start_idx: int = 0
-for _cigar in cigar_split:
-    if "S" in _cigar or "H" in _cigar:
-        pass
-    elif "I" in _cigar:
-        ins_num = int(_cigar.replace("I", ""))
-        append("I" * ins_num)
-    else:
-        print(start_idx)
-        cigar_num = int(re.sub("[MDNSHPX=]", "", _cigar))
-        end_idx = start_idx + cigar_num
-        append(tmp_ref_seq[start_idx or None:end_idx or None])
-        start_idx += cigar_num
+def annotate_insertion(ref, cigar):
+    start_idx: int = 0
+    end_idx: int = 0
+    annotates = []
+    append = annotates.append
+    cigar_trim_clip = re.sub("[0-9]+(S|H)", "", cigar)
+    for _cigar in re.split("([0-9]+I)", cigar_trim_clip):
+        if "I" in _cigar:
+            ins_num = int(_cigar.replace("I", ""))
+            append("I" * ins_num)
+        else:
+            cigar_num = int(re.sub("[MDNSHPX=]", "", _cigar))
+            end_idx = start_idx + cigar_num
+            append(ref[start_idx or None:end_idx or None])
+            start_idx += cigar_num
+    return ''.join(annotates)
 
-ref_seq_ins_annotated = ''.join(ref_seq_ins_annotated)
+
+# [annotate_insertion(x, y) for x, y in zip(ref_seqs, cigars)]
+
+ref_seqs_anno = list(map(annotate_insertion, ref_seqs_trimed, cigars))
 
 ###############################################################################
 # Annotate Deletion in query
 ###############################################################################
-cigar
-que_seq
-re.sub(r"[A-Z]([0-9]+)I", r"\1", cigar_str)
-
-_left_clip = re.sub(r'(S|H).*', '', cigar_str)
-if re.search(r"[A-Z]", _left_clip):
-    left_clip_length = 0
-else:
-    left_clip_length = int(_left_clip)
-_right_clip = re.sub(r'.*[A-Z]([0-9]+)(S|H)$', r"\1", cigar_str)
-if re.search(r"[A-Z]", _right_clip):
-    right_clip_length = 0
-else:
-    right_clip_length = int(_right_clip)
-return left_clip_length, right_clip_length
 
 
-clip_length = list(map(count_clip, cigar))
+def annotate_deletion(que, cigar):
+    start_idx: int = 0
+    end_idx: int = 0
+    annotates = []
+    append = annotates.append
+    cigar_trim_clip = re.sub("[0-9]+(S|H)", "", cigar)
+    for _cigar in re.split("([0-9]+D)", cigar_trim_clip):
+        if "D" in _cigar:
+            del_num = int(_cigar.replace("D", ""))
+            append("D" * del_num)
+        else:
+            cigar_num = int(re.sub("[MINPX=]", "", _cigar))
+            end_idx = start_idx + cigar_num
+            append(que[start_idx or None:end_idx or None])
+            start_idx += cigar_num
+    return ''.join(annotates)
 
 
-ref_seq_clipped = []
-append = ref_seq_clipped.append
-
-for s, que, ref in zip(start, que_seq_clipped, ref_seq):
-    _ = ref[s or None:]
-    append(_[:len(que)])
+que_seqs_anno = list(map(annotate_deletion, que_seqs_clipped, cigars))
 
 ###############################################################################
-# Add Insertion in reference
+# Calculate CS tag
 ###############################################################################
 
-que_seq_clipped[2]
-ref_seq_clipped[2]
+cstags = list(map(call_cs.call_cs_long, ref_seqs_anno, que_seqs_anno))
+
+[print(s) for s in cstags]
+if args.long == False:
+    cstags = list(map(call_cs.call_cs_short, cstags))
+
+
+###############################################################################
+# Format SAM or PAF
+###############################################################################
+
 
 # if __name__ == "__main__":
 #     # query, reference, long, paf, threads = parser()

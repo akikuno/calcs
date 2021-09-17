@@ -1,7 +1,10 @@
 import re
 
-ref = "AIIIAAAAAATT"
-que = "ATTTDDDAAAAA"
+# ref = "AIIIAAAAAATT"
+# que = "ATTTDDDAAAAA"
+
+# ref = "ATAA"
+# que = "AAAA"
 
 
 def call_cs_long(ref: str, que: str):
@@ -31,7 +34,7 @@ def call_cs_long(ref: str, que: str):
         # Substitution
         elif _ref != _que:
             _cs = "*" + _ref.lower() + _que.lower()
-            _previous == "S"
+            _previous = "S"
         append(_cs)
     return "cs:Z:" + ''.join(cslong)
 
@@ -47,9 +50,11 @@ def call_cs_short(cslong):
     return ''.join(cs)
 
 
-cslong = call_cs_long(ref, que)
+# call_cs_long(ref, que)
 
-cs = call_cs_short(cslong)
+# cslong = call_cs_long(ref, que)
 
-cslong
-cs
+# cs = call_cs_short(cslong)
+
+# cslong
+# cs
