@@ -21,13 +21,6 @@ import sys
 # args = parser.parse_args()
 
 # *TEST========================================================
-# arg.query=open("tests/deletion/del.sam")
-# arg.reference="tests/random_100bp.fa"
-# ! posicon
-subprocess.run(["cat", "tests/deletion/del.sam"])
-subprocess.run(["cat", "tests/deletion/del_cs.sam"])
-subprocess.run(["cat", "tests/deletion/del_cslong.sam"])
-###
 
 file_que_sam = "tests/subindel/subindel.sam"
 file_ref_fasta = "tests/random_100bp.fa"
@@ -49,6 +42,7 @@ body_idx = [not _ for _ in header_idx]
 header = list(compress(que_sam, header_idx))
 body = list(compress(que_sam, body_idx))
 
+start = [int(s.split("\t")[3]) - 1 for s in body]
 cigar = [s.split("\t")[5] for s in body]
 que_seq = [s.split("\t")[9] for s in body]
 
@@ -64,45 +58,64 @@ with open(file_ref_fasta) as f:
         append(row)
 
 ref_seq_idx = [not _.startswith(">") for _ in ref_fasta]
-ref_seq = list(compress(ref_fasta, ref_seq_idx))
+ref_seq = list(compress(ref_fasta, ref_seq_idx)) * len(que_seq)
 
 ###############################################################################
-# Remove soft/hard clipping
+# Remove soft/hard clip in query sequence
 ###############################################################################
 
-clip_idx = ["S" in _ for _ in cigar]
-cigar_clip = list(compress(cigar, clip_idx))
 
-list(compress(cigar, clip_idx))
-list(compress(que_seq, clip_idx))
+def count_clip(cigar_str):
+    _left_clip = re.sub(r'(S|H).*', '', cigar_str)
+    if re.search(r"[A-Z]", _left_clip):
+        left_clip_length = 0
+    else:
+        left_clip_length = int(_left_clip)
+    _right_clip = re.sub(r'.*[A-Z]([0-9]+)(S|H)$', r"\1", cigar_str)
+    if re.search(r"[A-Z]", _right_clip):
+        right_clip_length = 0
+    else:
+        right_clip_length = int(_right_clip)
+    return left_clip_length, right_clip_length
 
 
-def cigarsplit(s):
-    group_by = 2
-    s_split = re.split(r"(\d+)", s)[1:]
-    s_group_by = [s_split[i:i + group_by]
-                  for i in range(0, len(s_split), group_by)]
-    return s_group_by
+clip_length = list(map(count_clip, cigar))
+
+que_seq_clipped = []
+append = que_seq_clipped.append
+
+for idx, (seq, clip) in enumerate(zip(que_seq, clip_length)):
+    left, right = clip
+    seq = seq[left or None: -right or None]
+    append(seq)
+
+que_seq_clipped
+
+###############################################################################
+# Clip sequence of reference by adjusting start and end sites
+# to unify its length to query
+###############################################################################
+
+ref_seq_clipped = []
+append = ref_seq_clipped.append
+
+for s, que, ref in zip(start, que_seq_clipped, ref_seq):
+    _ = ref[s or None:]
+    append(_[:len(que)])
+
+que_seq_clipped[2]
+ref_seq_clipped[2]
+
+###############################################################################
+# Check
+# to unify its length to query
+###############################################################################
 
 
-tmp = [cigarsplit(s) for s in cigar]
-
-tmp2 = int(tmp[0][0][0]) * tmp[0][0][1]
-
-int(tmp[0][0][0]) * tmp[0][0][1]
-
-int(tmp[1][0][0]) * tmp[1][0][1]
-2 * "M"
-[s[1] * s[0] for s in tmp]
-
-# *TEST========================================================
-
-# print(query)
-
-if __name__ == "__main__":
-    # query, reference, long, paf, threads = parser()
-    print(args.query)
-    print(args.reference)
-    print(args.long)
-    print(args.paf)
-    print(args.threads)
+# if __name__ == "__main__":
+#     # query, reference, long, paf, threads = parser()
+#     print(args.query)
+#     print(args.reference)
+#     print(args.long)
+#     print(args.paf)
+#     print(args.threads)

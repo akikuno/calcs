@@ -1,5 +1,6 @@
 #!/bin/sh
 
+conda activate calcs
 ref=tests/random_100bp.fa
 que=tests/subindel/subindel.fq
 
@@ -15,5 +16,7 @@ minimap2 -ax map-ont --cs "$ref" "$que" >tests/subindel/subindel_cs.sam
 minimap2 -ax map-ont --cs=long "$ref" "$que" >tests/subindel/subindel_cslong.sam
 
 # Check CS tag
-cat tests/subindel/subindel_cs.sam | awk '$1 !~ "@" {print $(NF-1)}'
-cat tests/subindel/subindel_cslong.sam | awk '$1 !~ "@" {print $(NF-1)}'
+cat tests/subindel/subindel_cs.sam | awk '$1 !~ "@" {print "idx:" NR-3, "START:" $4, "CIGAR:" $6, $(NF-1)}'
+
+cat tests/subindel/subindel_cs.sam | awk '$1 !~ "@" {print "idx:" NR-3, $1,"\n" $(NF-1)"\n"}'
+cat tests/subindel/subindel_cslong.sam | awk '$1 !~ "@" {print "idx:" NR-3, $1,"\n" $(NF-1)"\n"}'
