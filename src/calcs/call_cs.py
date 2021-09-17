@@ -4,36 +4,34 @@ ref = "AIIIAAAAAATT"
 que = "ATTTDDDAAAAA"
 
 
-def call_cs_long(ref, que):
+def call_cs_long(ref: str, que: str):
     cslong = []
     append = cslong.append
-    _cs = ''
-    _previous = ''
+    _cs: str = ''
+    _previous: str = ''
     for _ref, _que in zip(list(ref), list(que)):
-        if _ref == _que:
-            # Match
-            if _previous == "M":
-                _cs = _ref
-            else:
-                _cs = "=" + _ref
+        # Match
+        if _ref == _que and _previous == "M":
+            _cs = _ref
+        elif _ref == _que and not _previous == "M":
+            _cs = "=" + _ref
             _previous = "M"
         # Deletion
-        elif _que == "D":
-            if _previous == "D":
-                _cs = _ref.lower()
-            else:
-                _cs = "-" + _ref.lower()
+        elif _que == "D" and _previous == "D":
+            _cs = _ref.lower()
+        elif _que == "D" and not _previous == "D":
+            _cs = "-" + _ref.lower()
             _previous = "D"
         # Insertion
-        elif _ref == "I":
-            if _previous == "I":
-                _cs = _que.lower()
-            else:
-                _cs = "+" + _que.lower()
+        elif _ref == "I" and _previous == "I":
+            _cs = _que.lower()
+        elif _ref == "I" and not _previous == "I":
+            _cs = "+" + _que.lower()
             _previous = "I"
         # Substitution
         elif _ref != _que:
             _cs = "*" + _ref.lower() + _que.lower()
+            _previous == "S"
         append(_cs)
     return "cs:Z:" + ''.join(cslong)
 

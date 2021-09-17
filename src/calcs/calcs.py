@@ -1,4 +1,5 @@
 # from parser import parser
+from itertools import zip_longest
 import re
 import subprocess
 from itertools import compress
@@ -92,16 +93,62 @@ for idx, (seq, clip) in enumerate(zip(que_seq, clip_length)):
 que_seq_clipped
 
 ###############################################################################
-# Clip sequence of reference by adjusting start and end sites
-# to unify its length to query
+# Annotate Insertion in reference
 ###############################################################################
 
-cigar_str = cigar[2]
-cigar_str = "10M5I10M12I"
+tmp_ref_seq: str = "AAATTT"
+cigar_str: str = "3M2I2D3M"
+expected = "AAAIITTT"
 
+tmp_ref_seq[:3] + int(2) * "I" + tmp_ref_seq[3:6]
+
+
+cigar_split = re.split("([0-9]+I)", cigar_str)
+cigar_expand = []
+append = cigar_expand.append
+for _cigar in cigar_split:
+    if "S" in _cigar or "H" in _cigar:
+        pass
+    elif "I" in _cigar:
+        ins_num = int(_cigar.replace("I", ""))
+        append("I" * ins_num)
+    else:
+        cigar_num = int(re.sub("[MDNSHPX=]", "", _cigar))
+        append("=" * cigar_num)
+
+cigar_expand = ''.join(cigar_expand)
+
+ref_seq_ins = []
+append = ref_seq_ins.append
+_ref_retain: str = ""
+for _ref, _cigar in zip_longest(list(tmp_ref_seq), list(cigar_expand)):
+    if _ref_retain and _ref_retain == "=":
+        append(_ref)
+        _ref_retain = ""
+    elif _cigar == "=":
+        append(_ref)
+    elif _cigar == "I":
+        append("I")
+        _ref_retain += _ref
+
+hoge = "jpog"
+if not hoge:
+    print("hoge")
+
+tmp_ref_seq
+cigar_expand
+
+cigar_split = re.split("[MDNSHPX=]", cigar_str)
+cigar_split = re.split("[MDNSHPX=]", cigar_str)
 cigar_split = re.split(r"([0-9]+[A-Z])", cigar_str)
+
 cigar_split[3]
 
+###############################################################################
+# Annotate Deletion in query
+###############################################################################
+cigar
+que_seq
 re.sub(r"[A-Z]([0-9]+)I", r"\1", cigar_str)
 
 _left_clip = re.sub(r'(S|H).*', '', cigar_str)
