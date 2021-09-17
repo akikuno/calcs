@@ -96,6 +96,30 @@ que_seq_clipped
 # to unify its length to query
 ###############################################################################
 
+cigar_str = cigar[2]
+cigar_str = "10M5I10M12I"
+
+cigar_split = re.split(r"([0-9]+[A-Z])", cigar_str)
+cigar_split[3]
+
+re.sub(r"[A-Z]([0-9]+)I", r"\1", cigar_str)
+
+_left_clip = re.sub(r'(S|H).*', '', cigar_str)
+if re.search(r"[A-Z]", _left_clip):
+    left_clip_length = 0
+else:
+    left_clip_length = int(_left_clip)
+_right_clip = re.sub(r'.*[A-Z]([0-9]+)(S|H)$', r"\1", cigar_str)
+if re.search(r"[A-Z]", _right_clip):
+    right_clip_length = 0
+else:
+    right_clip_length = int(_right_clip)
+return left_clip_length, right_clip_length
+
+
+clip_length = list(map(count_clip, cigar))
+
+
 ref_seq_clipped = []
 append = ref_seq_clipped.append
 
@@ -103,14 +127,12 @@ for s, que, ref in zip(start, que_seq_clipped, ref_seq):
     _ = ref[s or None:]
     append(_[:len(que)])
 
+###############################################################################
+# Add Insertion in reference
+###############################################################################
+
 que_seq_clipped[2]
 ref_seq_clipped[2]
-
-###############################################################################
-# Check
-# to unify its length to query
-###############################################################################
-
 
 # if __name__ == "__main__":
 #     # query, reference, long, paf, threads = parser()
