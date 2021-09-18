@@ -246,8 +246,7 @@ def insert_cstag(alignment: str, cstag: str) -> str:
 # MAIN
 ###############################################################################
 
-
-if __name__ == "__main__":
+def main():
     # Argument parse
     ARGS_QUERY, ARGS_REFERENCE, ARGS_LONG, ARGS_PAF, ARGS_THREADS = parse_args()
 
@@ -316,3 +315,11 @@ if __name__ == "__main__":
                 insert_cstag, ALIGNMENTS, CSTAGS))
         SAM_CSTAGS = HEADER + tuple(alignment_cstags)
         sys.stdout.write('\n'.join(SAM_CSTAGS + ("",)))
+
+###############################################################################
+# Call MAIN
+###############################################################################
+
+
+if __name__ == "__main__":
+    main()
