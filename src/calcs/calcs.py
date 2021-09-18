@@ -1,4 +1,5 @@
 # from parser import parser
+from math import log2
 from src.calcs import call_cs
 import re
 from itertools import compress
@@ -25,6 +26,8 @@ import sys
 file_que_sam = "tests/subindel/subindel.sam"
 file_ref_fasta = "tests/random_100bp.fa"
 
+args_long = False
+args_paf = True
 ###############################################################################
 # Parse query SAM
 ###############################################################################
@@ -100,13 +103,9 @@ for idx, (seq, clip) in enumerate(zip(que_seqs, clip_length)):
     seq = seq[left or None: -right or None]
     append(seq)
 
-que_seqs_clipped
-
 ###############################################################################
 # Annotate Insertion in reference
 ###############################################################################
-
-# re.sub("[0-9]+(S|H)", "", "11115H100M51111S")
 
 
 def annotate_insertion(ref, cigar):
@@ -120,20 +119,22 @@ def annotate_insertion(ref, cigar):
             ins_num = int(_cigar.replace("I", ""))
             append("I" * ins_num)
         else:
-            cigar_num = int(re.sub("[MDNSHPX=]", "", _cigar))
+            cigar_num = sum([int(s or 0)
+                            for s in re.split("[MDNPX=]", _cigar)])
             end_idx = start_idx + cigar_num
             append(ref[start_idx or None:end_idx or None])
             start_idx += cigar_num
     return ''.join(annotates)
 
 
-# [annotate_insertion(x, y) for x, y in zip(ref_seqs, cigars)]
-
 ref_seqs_anno = list(map(annotate_insertion, ref_seqs_trimed, cigars))
 
 ###############################################################################
 # Annotate Deletion in query
 ###############################################################################
+
+que = que_seqs_clipped[9]
+cigar = cigars[9]
 
 
 def annotate_deletion(que, cigar):
@@ -147,7 +148,8 @@ def annotate_deletion(que, cigar):
             del_num = int(_cigar.replace("D", ""))
             append("D" * del_num)
         else:
-            cigar_num = int(re.sub("[MINPX=]", "", _cigar))
+            cigar_num = sum([int(s or 0)
+                            for s in re.split("[MINPX=]", _cigar)])
             end_idx = start_idx + cigar_num
             append(que[start_idx or None:end_idx or None])
             start_idx += cigar_num
@@ -160,16 +162,112 @@ que_seqs_anno = list(map(annotate_deletion, que_seqs_clipped, cigars))
 # Calculate CS tag
 ###############################################################################
 
-cstags = list(map(call_cs.call_cs_long, ref_seqs_anno, que_seqs_anno))
 
-[print(s) for s in cstags]
-if args.long == False:
-    cstags = list(map(call_cs.call_cs_short, cstags))
+def call_cs_long(ref: str, que: str):
+    cslong = []
+    append = cslong.append
+    _cs: str = ''
+    _previous: str = ''
+    for _ref, _que in zip(list(ref), list(que)):
+        # Match
+        if _ref == _que and _previous == "M":
+            _cs = _ref
+        elif _ref == _que and not _previous == "M":
+            _cs = "=" + _ref
+            _previous = "M"
+        # Deletion
+        elif _que == "D" and _previous == "D":
+            _cs = _ref.lower()
+        elif _que == "D" and not _previous == "D":
+            _cs = "-" + _ref.lower()
+            _previous = "D"
+        # Insertion
+        elif _ref == "I" and _previous == "I":
+            _cs = _que.lower()
+        elif _ref == "I" and not _previous == "I":
+            _cs = "+" + _que.lower()
+            _previous = "I"
+        # Substitution
+        elif _ref != _que:
+            _cs = "*" + _ref.lower() + _que.lower()
+            _previous = "S"
+        append(_cs)
+    return "cs:Z:" + ''.join(cslong)
+
+
+def call_cs_short(cslong):
+    cs = []
+    append = cs.append
+    cs_split = re.split("(=[A-Z]+)", cslong)
+    for _cs in cs_split:
+        if _cs.startswith("="):
+            _cs = ":" + str(len(re.findall("[A-Z]", _cs)))
+        append(_cs)
+    return ''.join(cs)
+
+
+cstags = list(map(call_cs_long, ref_seqs_anno, que_seqs_anno))
+
+
+if not args_long:
+    cstags = list(map(call_cs_short, cstags))
 
 
 ###############################################################################
-# Format SAM or PAF
+# Output SAM or PAF
 ###############################################################################
+
+# PAF format:
+# https://github.com/lh3/miniasm/blob/master/PAF.md
+
+if args_paf:
+    def determine_strand(flag: int) -> str:
+        _cache = flag
+        _strand = "+"
+        while _cache > 0:
+            _power = int(log2(_cache))
+            _cache = _cache - 2**_power
+            if _power == 4:
+                _strand = "-"
+                break
+        return _strand
+
+    def convert_to_paf(body, cstag, clip_length, start, ref_seq, ref_seq_anno) -> str:
+        body_split = body.split("\t")
+        start_clips, end_clips = clip_length
+        _quename = body_split[0]
+        _quelen = str(len(body_split[9]))
+        _questart = str(start_clips)
+        _queend = str(len(body_split[9]) - end_clips)
+        _strand = determine_strand(int(body_split[1]))
+        _refname = body_split[2]
+        _reflen = str(len(ref_seq))
+        _refstart = str(start)
+        _refend = str(len(ref_seq_anno.replace("I", "")) + start)
+        if "cs:Z:=" in cstag:
+            _matches = len(re.findall('[A-Z]', cstag)) - 1
+        else:
+            cs_split = re.split(r"[a-zA-Z:\-+*]", cstag)
+            _matches = sum([int(s or 0) for s in cs_split])
+        _matches = str(_matches)
+        _blocklen = str(len(ref_seq_anno))
+        _quality = body_split[4]
+        _others = body_split[11:]
+        _others.append(cstag)
+        paf = [_quename, _quelen, _questart, _queend, _strand, _refname,
+               _reflen, _refstart, _refend, _matches, _blocklen, _quality]
+        return '\t'.join(paf + _others)
+
+    paf_cstag = list(map(convert_to_paf, body, cstags, clip_length,
+                         starts, ref_seqs, ref_seqs_anno))
+    sys.stdout.write('\n'.join(paf_cstag + [""]))
+
+else:
+    def insert_cstag(body: str, cstag: str) -> str:
+        return re.sub("(\trl:i:0)", "\t" + cstag + r"\1", body)
+    body_cstag = list(map(insert_cstag, body, cstags))
+    que_sam_cstag = header + body_cstag
+    sys.stdout.write('\n'.join(que_sam_cstag + [""]))
 
 
 # if __name__ == "__main__":
