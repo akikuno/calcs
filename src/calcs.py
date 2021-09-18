@@ -2,6 +2,7 @@
 # Import modules
 ###############################################################################
 
+# ? import time
 import argparse
 import os
 import re
@@ -29,8 +30,9 @@ def parse_args():
     parser.add_argument("-@", "--threads", default=1, type=int,
                         help="Number of threads [default: 1]")
     args = parser.parse_args()
-    if args.threads > len(os.sched_getaffinity(0)):
-        threads = len(os.sched_getaffinity(0))
+    os_cpus = int(os.cpu_count())  # len(os.sched_getaffinity(0))
+    if args.threads > os_cpus:
+        threads = os_cpus
     else:
         threads = args.threads
     return args.query, args.reference, args.long, args.paf, threads
@@ -74,18 +76,18 @@ def trim_starts(ref_seq: str, start: int) -> str:
     return ref_seq[start or None:]
 
 ###############################################################################
-# Trim soft/hard clip in query
+# Trim soft-clip in query
 ###############################################################################
 
 
-def len_clips(cigar):
-    """Get the length of left and right clips"""
-    _left = re.sub(r'(S|H).*', '', cigar)
+def len_softclips(cigar):
+    """Get the length of left and right softclips"""
+    _left = re.sub(r'S.*', '', cigar)
     if re.search(r"[A-Z]", _left):
         left_length = 0
     else:
         left_length = int(_left)
-    _right = re.sub(r'.*[A-Z]([0-9]+)(S|H)$', r"\1", cigar)
+    _right = re.sub(r'.*[A-Z]([0-9]+)S$', r"\1", cigar)
     if re.search(r"[A-Z]", _right):
         right_length = 0
     else:
@@ -96,6 +98,7 @@ def len_clips(cigar):
 def trim_queseqs(queseq, len_clip):
     left, right = len_clip
     return queseq[left or None: -right or None]
+
 
 ###############################################################################
 # Annotate Insertion in reference
@@ -195,8 +198,8 @@ def call_cs_short(cslong):
 ###############################################################################
 # Output SAM or PAF
 ###############################################################################
-# PAF format:
-# https://github.com/lh3/miniasm/blob/master/PAF.md
+# ? PAF format:
+# ? https://github.com/lh3/miniasm/blob/master/PAF.md
 
 
 def determine_strand(flag: int) -> str:
@@ -246,6 +249,10 @@ def insert_cstag(alignment: str, cstag: str) -> str:
 # MAIN
 ###############################################################################
 
+# ? ARGS_QUERY = open("tests/subindel/subindel.sam")
+# ? ARGS_REFERENCE = "tests/random_100bp.fa"
+
+
 def main():
     # Argument parse
     ARGS_QUERY, ARGS_REFERENCE, ARGS_LONG, ARGS_PAF, ARGS_THREADS = parse_args()
@@ -259,9 +266,15 @@ def main():
     HEADER = tuple(list(compress(QUESAM, is_header)))
     ALIGNMENTS = tuple(list(compress(QUESAM, is_alignment)))
 
-    STARTS = tuple([int(s.split("\t")[3]) - 1 for s in ALIGNMENTS])
-    CIGARS = tuple([s.split("\t")[5] for s in ALIGNMENTS])
-    QUESEQS = tuple([s.split("\t")[9] for s in ALIGNMENTS])
+    is_mapped = ["*" != s.split("\t")[5] for s in ALIGNMENTS]
+    is_unmapped = [not _ for _ in is_mapped]
+
+    ALIGNMENTS_MAPPED = tuple(list(compress(ALIGNMENTS, is_mapped)))
+    ALIGNMENTS_UNMAPPED = tuple(list(compress(ALIGNMENTS, is_unmapped)))
+
+    STARTS = tuple([int(s.split("\t")[3]) - 1 for s in ALIGNMENTS_MAPPED])
+    CIGARS = tuple([s.split("\t")[5] for s in ALIGNMENTS_MAPPED])
+    QUESEQS = tuple([s.split("\t")[9] for s in ALIGNMENTS_MAPPED])
 
     # Parse Reference FASTA file
     REFFASTA = tuple(read_reference_fasta(ARGS_REFERENCE))
@@ -271,14 +284,16 @@ def main():
 
     # Trim start sites in reference sequence
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-        _ = list(executor.map(trim_starts, REFSEQS, STARTS))
+        _ = list(executor.map(trim_starts, REFSEQS, STARTS,
+                              chunksize=int(len(REFSEQS)/ARGS_THREADS)))
         REFSEQS_TRIMMED = tuple(_)
 
     # Trim soft/hard clip into query sequence
-    LEN_CLIPS = list(map(len_clips, CIGARS))
+    LEN_CLIPS = list(map(len_softclips, CIGARS))
 
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-        _ = list(executor.map(trim_queseqs, QUESEQS, LEN_CLIPS))
+        _ = list(executor.map(trim_queseqs, QUESEQS, LEN_CLIPS,
+                              chunksize=int(len(QUESEQS)/ARGS_THREADS)))
         QUESEQS_TRIMMED = tuple(_)
 
     # Annotate Insertion in reference sequence
@@ -288,33 +303,48 @@ def main():
 
     # Annotate Deletion into query seuqence
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-        _ = list(executor.map(annotate_deletion, QUESEQS_TRIMMED, CIGARS))
+        _ = list(executor.map(annotate_deletion, QUESEQS_TRIMMED, CIGARS,
+                              chunksize=int(len(QUESEQS_TRIMMED)/ARGS_THREADS)))
         QUESEQS_ANNO = tuple(_)
 
     # Calculate CS tags
+    # ?-----------------
+    # ? start = time.time()
+    # ?-----------------
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-        cstags = list(executor.map(call_cs_long, REFSEQS_ANNO, QUESEQS_ANNO))
-
+        cstags = list(executor.map(call_cs_long, REFSEQS_ANNO, QUESEQS_ANNO,
+                                   chunksize=int(len(REFSEQS_ANNO)/ARGS_THREADS)))
     if ARGS_LONG:
         CSTAGS = tuple(cstags)
     else:
         with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-            _ = list(executor.map(call_cs_short, cstags))
+            _ = list(executor.map(call_cs_short, cstags,
+                                  chunksize=int(len(cstags)/ARGS_THREADS)))
             CSTAGS = tuple(_)
-
+    # ?-----------------
+    # ? cs_time = time.time() - start
+    # ?-----------------
     # Output PAF or SAM
     if ARGS_PAF:
         with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
             paf_cstags = list(executor.map(convert_to_paf,
-                                           ALIGNMENTS, CSTAGS, LEN_CLIPS,
-                                           STARTS, REFSEQS, REFSEQS_ANNO))
-            sys.stdout.write('\n'.join(paf_cstags + [""]))
+                                           ALIGNMENTS_MAPPED, CSTAGS, LEN_CLIPS,
+                                           STARTS, REFSEQS, REFSEQS_ANNO,
+                                           chunksize=int(len(ALIGNMENTS_MAPPED)/ARGS_THREADS)))
+        sys.stdout.write('\n'.join(paf_cstags + [""]))
     else:
         with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
             alignment_cstags = list(executor.map(
-                insert_cstag, ALIGNMENTS, CSTAGS))
-        SAM_CSTAGS = HEADER + tuple(alignment_cstags)
+                insert_cstag, ALIGNMENTS_MAPPED, CSTAGS,
+                chunksize=int(len(ALIGNMENTS_MAPPED)/ARGS_THREADS)))
+        SAM_CSTAGS = HEADER + tuple(alignment_cstags) + \
+            tuple(ALIGNMENTS_UNMAPPED)
         sys.stdout.write('\n'.join(SAM_CSTAGS + ("",)))
+    # ?-----------------
+    # ?TIME REPORTS
+    # ?print(f"Call CStag: {cs_time:.2} sec", file=sys.stderr)
+    # ?-----------------
+
 
 ###############################################################################
 # Call MAIN
