@@ -10,47 +10,50 @@ from math import log2
 # Argument parse
 ###############################################################################
 
-parser = argparse.ArgumentParser()
-parser.add_argument('query', nargs="?", type=argparse.FileType("r"),
-                    default=sys.stdin,
-                    help="Give the full path to a SAM file")
-parser.add_argument("-r", "--reference", required=True,
-                    help="Give the full path to a reference FASTA file")
-parser.add_argument("-l", "--long", action="store_true",
-                    help="Output the cs tag in the long form")
-parser.add_argument("-p", "--paf", action="store_true",
-                    help="Output PAF")
-parser.add_argument("-@", "--threads", default=1, type=int,
-                    help="Number of threads [default: 1]")
-args = parser.parse_args()
 
-ARGS_QUERY = args.query
-ARGS_REFERENCE = args.reference
-ARGS_LONG = args.long
-ARGS_PAF = args.paf
-args_threads = args.threads
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('query', nargs="?", type=argparse.FileType("r"),
+                        default=sys.stdin,
+                        help="Give the full path to a SAM file")
+    parser.add_argument("-r", "--reference", required=True,
+                        help="Give the full path to a reference FASTA file")
+    parser.add_argument("-l", "--long", action="store_true",
+                        help="Output the cs tag in the long form")
+    parser.add_argument("-p", "--paf", action="store_true",
+                        help="Output PAF")
+    parser.add_argument("-@", "--threads", default=1, type=int,
+                        help="Number of threads [default: 1]")
+    args = parser.parse_args()
+    if args.threads > len(os.sched_getaffinity(0)):
+        threads = len(os.sched_getaffinity(0))
+    else:
+        threads = args.threads
+    return args.query, args.reference, args.long, args.paf, threads
 
-if args_threads > len(os.sched_getaffinity(0)):
-    ARGS_THREADS = len(os.sched_getaffinity(0))
-else:
-    ARGS_THREADS = args_threads
 
 ###############################################################################
 # Parse query SAM
 ###############################################################################
 
-que_sam = []
-append = que_sam.append
-with ARGS_QUERY as f:
-    for s in f:
-        row = s.strip()
-        append(row)
 
-is_header = [_.startswith("@") for _ in que_sam]
+def read_query_sam(args_query):
+    que_sam = []
+    append = que_sam.append
+    with args_query as f:
+        for s in f:
+            row = s.strip()
+            append(row)
+    return que_sam
+
+
+QUESAM = tuple(read_query_sam(ARGS_QUERY))
+
+is_header = [_.startswith("@") for _ in QUESAM]
 is_alignment = [not _ for _ in is_header]
 
-HEADER = tuple(list(compress(que_sam, is_header)))
-ALIGNMENTS = tuple(list(compress(que_sam, is_alignment)))
+HEADER = tuple(list(compress(QUESAM, is_header)))
+ALIGNMENTS = tuple(list(compress(QUESAM, is_alignment)))
 
 STARTS = tuple([int(s.split("\t")[3]) - 1 for s in ALIGNMENTS])
 CIGARS = tuple([s.split("\t")[5] for s in ALIGNMENTS])
@@ -60,15 +63,21 @@ QUESEQS = tuple([s.split("\t")[9] for s in ALIGNMENTS])
 # Parse reference FASTA
 ###############################################################################
 
-ref_fasta = []
-append = ref_fasta.append
-with open(ARGS_REFERENCE) as f:
-    for s in f:
-        row = s.strip()
-        append(row)
 
-is_alignment = [not _.startswith(">") for _ in ref_fasta]
-REFSEQS = tuple(list(compress(ref_fasta, is_alignment)) * len(QUESEQS))
+def read_reference_fasta(args_reference):
+    ref_fasta = []
+    append = ref_fasta.append
+    with open(args_reference) as f:
+        for s in f:
+            row = s.strip()
+            append(row)
+    return ref_fasta
+
+
+REFFASTA = tuple(read_reference_fasta(ARGS_REFERENCE))
+is_alignment = [not _.startswith(">") for _ in REFFASTA]
+
+REFSEQS = tuple(list(compress(REFFASTA, is_alignment)) * len(QUESEQS))
 
 ###############################################################################
 # Trim start sites in reference
@@ -292,10 +301,10 @@ else:
     sys.stdout.write('\n'.join(SAM_CSTAGS + ("",)))
 
 
-# if __name__ == "__main__":
-#     # query, reference, long, paf, threads = parser()
-#     print(args.query)
-#     print(args.reference)
-#     print(args.long)
-#     print(args.paf)
-#     print(args.threads)
+if __name__ == "__main__":
+    # query, reference, long, paf, threads = parser()
+    print(args.query)
+    print(args.reference)
+    print(args.long)
+    print(args.paf)
+    print(args.threads)
