@@ -1,8 +1,10 @@
-from math import log2
-import re
-from itertools import compress
 import argparse
+import os
+import re
 import sys
+from concurrent.futures import ProcessPoolExecutor
+from itertools import compress
+from math import log2
 
 ###############################################################################
 # Argument parse
@@ -22,15 +24,16 @@ parser.add_argument("-@", "--threads", default=1, type=int,
                     help="Number of threads [default: 1]")
 args = parser.parse_args()
 
-args_query = args.query
-args_reference = args.reference
-args_query = args.query
-args_long = args.long
-args_paf = args.paf
+ARGS_QUERY = args.query
+ARGS_REFERENCE = args.reference
+ARGS_LONG = args.long
+ARGS_PAF = args.paf
 args_threads = args.threads
 
-# args_query = open("tests/subindel/subindel.sam")
-# args_reference = "tests/random_100bp.fa"
+if args_threads > len(os.sched_getaffinity(0)):
+    ARGS_THREADS = len(os.sched_getaffinity(0))
+else:
+    ARGS_THREADS = args_threads
 
 ###############################################################################
 # Parse query SAM
@@ -38,7 +41,7 @@ args_threads = args.threads
 
 que_sam = []
 append = que_sam.append
-with args_query as f:
+with ARGS_QUERY as f:
     for s in f:
         row = s.strip()
         append(row)
@@ -59,7 +62,7 @@ QUESEQS = tuple([s.split("\t")[9] for s in ALIGNMENTS])
 
 ref_fasta = []
 append = ref_fasta.append
-with open(args_reference) as f:
+with open(ARGS_REFERENCE) as f:
     for s in f:
         row = s.strip()
         append(row)
@@ -76,7 +79,9 @@ def trim_starts(ref_seq: str, start: int) -> str:
     return ref_seq[start or None:]
 
 
-REFSEQS_TRIMMED = tuple(list(map(trim_starts, REFSEQS, STARTS)))
+with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
+    _ = list(executor.map(trim_starts, REFSEQS, STARTS))
+    REFSEQS_TRIMMED = tuple(_)
 
 ###############################################################################
 # Trim soft/hard clip in query
@@ -100,15 +105,15 @@ def len_clips(cigar):
 
 LEN_CLIPS = list(map(len_clips, CIGARS))
 
-queseqs_trimmed = []
-append = queseqs_trimmed.append
 
-for idx, (seq, clip) in enumerate(zip(QUESEQS, LEN_CLIPS)):
-    left, right = clip
-    seq = seq[left or None: -right or None]
-    append(seq)
+def trim_queseqs(queseq, len_clip):
+    left, right = len_clip
+    return queseq[left or None: -right or None]
 
-QUESEQS_TRIMMED = tuple(queseqs_trimmed)
+
+with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
+    _ = list(executor.map(trim_queseqs, QUESEQS, LEN_CLIPS))
+    QUESEQS_TRIMMED = tuple(_)
 
 ###############################################################################
 # Annotate Insertion in reference
@@ -134,8 +139,9 @@ def annotate_insertion(ref, cigar):
     return ''.join(annotates)
 
 
-refseqs_anno = list(map(annotate_insertion, REFSEQS_TRIMMED, CIGARS))
-REFSEQS_ANNO = tuple(refseqs_anno)
+with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
+    _ = list(executor.map(annotate_insertion, REFSEQS_TRIMMED, CIGARS))
+    REFSEQS_ANNO = tuple(_)
 
 ###############################################################################
 # Annotate Deletion in query
@@ -161,8 +167,10 @@ def annotate_deletion(que, cigar):
     return ''.join(annotates)
 
 
-queseqs_anno = list(map(annotate_deletion, QUESEQS_TRIMMED, CIGARS))
-QUESEQS_ANNO = tuple(queseqs_anno)
+with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
+    _ = list(executor.map(annotate_deletion, QUESEQS_TRIMMED, CIGARS))
+    QUESEQS_ANNO = tuple(_)
+
 
 ###############################################################################
 # Calculate CS tag
@@ -212,11 +220,16 @@ def call_cs_short(cslong):
     return ''.join(cs)
 
 
-cstags = list(map(call_cs_long, REFSEQS_ANNO, QUESEQS_ANNO))
-CSTAGS = tuple(cstags)
+with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
+    cstags = list(executor.map(call_cs_long, REFSEQS_ANNO, QUESEQS_ANNO))
 
-if not args_long:
-    CSTAGS = tuple(list(map(call_cs_short, cstags)))
+
+if ARGS_LONG:
+    CSTAGS = tuple(cstags)
+else:
+    with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
+        _ = list(executor.map(call_cs_short, cstags))
+        CSTAGS = tuple(_)
 
 
 ###############################################################################
@@ -226,7 +239,7 @@ if not args_long:
 # PAF format:
 # https://github.com/lh3/miniasm/blob/master/PAF.md
 
-if args_paf:
+if ARGS_PAF:
     def determine_strand(flag: int) -> str:
         _cache = flag
         _strand = "+"
@@ -264,15 +277,18 @@ if args_paf:
                _reflen, _refstart, _refend, _matches, _blocklen, _quality]
         return '\t'.join(paf + _others)
 
-    paf_cstag = list(map(convert_to_paf, ALIGNMENTS, CSTAGS, LEN_CLIPS,
-                         STARTS, REFSEQS, REFSEQS_ANNO))
-    sys.stdout.write('\n'.join(paf_cstag + [""]))
-
+    with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
+        paf_cstags = list(executor.map(convert_to_paf,
+                                       ALIGNMENTS, CSTAGS, LEN_CLIPS,
+                                       STARTS, REFSEQS, REFSEQS_ANNO))
+        sys.stdout.write('\n'.join(paf_cstags + [""]))
 else:
     def insert_cstag(alignment: str, cstag: str) -> str:
         return re.sub("(\trl:i:0)", "\t" + cstag + r"\1", alignment)
-    body_cstag = list(map(insert_cstag, ALIGNMENTS, CSTAGS))
-    SAM_CSTAGS = HEADER + tuple(body_cstag)
+
+    with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
+        alignment_cstags = list(executor.map(insert_cstag, ALIGNMENTS, CSTAGS))
+    SAM_CSTAGS = HEADER + tuple(alignment_cstags)
     sys.stdout.write('\n'.join(SAM_CSTAGS + ("",)))
 
 
