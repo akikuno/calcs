@@ -2,7 +2,7 @@
 # Import modules
 ###############################################################################
 
-# ? import time
+from time import time as tt  # ?===
 import argparse
 import os
 import re
@@ -198,8 +198,8 @@ def call_cs_short(cslong):
 ###############################################################################
 # Output SAM or PAF
 ###############################################################################
-# ? PAF format:
-# ? https://github.com/lh3/miniasm/blob/master/PAF.md
+# ? PAF format: # ?
+# ? https://github.com/lh3/miniasm/blob/master/PAF.md # ?
 
 
 def determine_strand(flag: int) -> str:
@@ -242,15 +242,15 @@ def convert_to_paf(alignment, cstag, len_clip, start, refseq, refseq_anno) -> st
 
 
 def insert_cstag(alignment: str, cstag: str) -> str:
-    return re.sub("(\trl:i:0)", "\t" + cstag + r"\1", alignment)
-
+    return alignment.replace("rl:i:", cstag + "\trl:i:")
+    # return re.sub("(\trl:i:0)", "\t" + cstag + r"\1", alignment)
 
 ###############################################################################
 # MAIN
 ###############################################################################
 
-# ? ARGS_QUERY = open("tests/subindel/subindel.sam")
-# ? ARGS_REFERENCE = "tests/random_100bp.fa"
+# ? ARGS_QUERY = open("tests/subindel/subindel.sam") # ?
+# ? ARGS_REFERENCE = "tests/random_100bp.fa" # ?
 
 
 def main():
@@ -258,8 +258,12 @@ def main():
     ARGS_QUERY, ARGS_REFERENCE, ARGS_LONG, ARGS_PAF, ARGS_THREADS = parse_args()
 
     # Parse Query SAM file
+    t = tt()  # ?
     QUESAM = tuple(read_query_sam(ARGS_QUERY))
+    readsam_time = tt() - t  # ?
+    print(f"Read Query: {readsam_time:.2} sec", file=sys.stderr)  # ?
 
+    t = tt()  # ?
     is_header = [_.startswith("@") for _ in QUESAM]
     is_alignment = [not _ for _ in is_header]
 
@@ -275,6 +279,7 @@ def main():
     STARTS = tuple([int(s.split("\t")[3]) - 1 for s in ALIGNMENTS_MAPPED])
     CIGARS = tuple([s.split("\t")[5] for s in ALIGNMENTS_MAPPED])
     QUESEQS = tuple([s.split("\t")[9] for s in ALIGNMENTS_MAPPED])
+    print(f"Parse sam: {tt() - t:.2} sec", file=sys.stderr)  # ?
 
     # Parse Reference FASTA file
     REFFASTA = tuple(read_reference_fasta(ARGS_REFERENCE))
@@ -283,12 +288,15 @@ def main():
     REFSEQS = tuple(list(compress(REFFASTA, is_alignment)) * len(QUESEQS))
 
     # Trim start sites in reference sequence
+    t = tt()  # ?
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
         _ = list(executor.map(trim_starts, REFSEQS, STARTS,
                               chunksize=int(len(REFSEQS)/ARGS_THREADS)))
         REFSEQS_TRIMMED = tuple(_)
+    print(f"Trim start sites: {tt() - t:.2} sec", file=sys.stderr)  # ?
 
-    # Trim soft/hard clip into query sequence
+    # Trim soft clip into query sequence
+    t = tt()  # ?
     LEN_CLIPS = list(map(len_softclips, CIGARS))
 
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
@@ -296,54 +304,60 @@ def main():
                               chunksize=int(len(QUESEQS)/ARGS_THREADS)))
         QUESEQS_TRIMMED = tuple(_)
 
+    print(f"Trim softclipss: {tt() - t:.2} sec", file=sys.stderr)  # ?
     # Annotate Insertion in reference sequence
+    t = tt()  # ?
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
         _ = list(executor.map(annotate_insertion, REFSEQS_TRIMMED, CIGARS))
         REFSEQS_ANNO = tuple(_)
+    print(f"Annotate Insertion: {tt() - t:.2} sec", file=sys.stderr)  # ?
 
     # Annotate Deletion into query seuqence
+    t = tt()  # ?
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
         _ = list(executor.map(annotate_deletion, QUESEQS_TRIMMED, CIGARS,
                               chunksize=int(len(QUESEQS_TRIMMED)/ARGS_THREADS)))
         QUESEQS_ANNO = tuple(_)
+    print(f"Annotate Deletion: {tt() - t:.2} sec", file=sys.stderr)  # ?
 
     # Calculate CS tags
-    # ?-----------------
-    # ? start = time.time()
-    # ?-----------------
+    t = tt()  # ?
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
         cstags = list(executor.map(call_cs_long, REFSEQS_ANNO, QUESEQS_ANNO,
                                    chunksize=int(len(REFSEQS_ANNO)/ARGS_THREADS)))
+    print(f"Call CSlong: {tt() - t:.2} sec", file=sys.stderr)  # ?
+
     if ARGS_LONG:
         CSTAGS = tuple(cstags)
     else:
+        t = tt()  # ?
         with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
             _ = list(executor.map(call_cs_short, cstags,
                                   chunksize=int(len(cstags)/ARGS_THREADS)))
             CSTAGS = tuple(_)
-    # ?-----------------
-    # ? cs_time = time.time() - start
-    # ?-----------------
+        print(f"Call CSshort: {tt() - t:.2} sec", file=sys.stderr)  # ?
+
     # Output PAF or SAM
     if ARGS_PAF:
+        t = tt()  # ?
         with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
             paf_cstags = list(executor.map(convert_to_paf,
                                            ALIGNMENTS_MAPPED, CSTAGS, LEN_CLIPS,
                                            STARTS, REFSEQS, REFSEQS_ANNO,
                                            chunksize=int(len(ALIGNMENTS_MAPPED)/ARGS_THREADS)))
+        print(f"Convert to PAF: {tt() - t:.2} sec", file=sys.stderr)  # ?
         sys.stdout.write('\n'.join(paf_cstags + [""]))
     else:
+        t = tt()  # ?
         with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
             alignment_cstags = list(executor.map(
                 insert_cstag, ALIGNMENTS_MAPPED, CSTAGS,
                 chunksize=int(len(ALIGNMENTS_MAPPED)/ARGS_THREADS)))
+        print(f"Insert CStag: {tt() - t:.2} sec", file=sys.stderr)  # ?
         SAM_CSTAGS = HEADER + tuple(alignment_cstags) + \
             tuple(ALIGNMENTS_UNMAPPED)
+        print(f"Convert to SAM: {tt() - t:.2} sec", file=sys.stderr)  # ?
         sys.stdout.write('\n'.join(SAM_CSTAGS + ("",)))
-    # ?-----------------
-    # ?TIME REPORTS
-    # ?print(f"Call CStag: {cs_time:.2} sec", file=sys.stderr)
-    # ?-----------------
 
 
 ###############################################################################
