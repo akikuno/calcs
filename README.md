@@ -20,33 +20,57 @@ Alternatively, you can get `calcs` from bioconda:
 conda install -c bioconda calcs
 ```
 
+## Usage
+
+```bash
+calcs [options] <in.sam> -r/--reference <in.fasta>
+```
+
 ## Getting Started
 
 ```bash
+# CS tag (short form)
 calcs aln.sam -r ref.fasta > aln_cs.sam
+# CS tag (long form)
+calcs aln.sam -r ref.fasta -l > aln_cslong.sam
+# PAF format with CS tag (short form)
+calcs aln.sam -r ref.fasta -p > aln_cs.paf
+# PAF format with CS tag (long form)
+calcs aln.sam -r ref.fasta -p -l > aln_cslong.paf
+# Multithreading
+calcs aln.sam -r ref.fasta -t 4 > aln_cs.sam
 ```
 
 
 ## Options
 
 ```bash
--r, --reference: reference fasta file (required)
--l, --long: Encoding the long form of cs tag (default: false)
--t, --threads INT: Number of threads to use (default: 1)
+-l, --long: output the cs tag in  the long form 
+-t, --threads INT: number of threads to use (default: 1)
 ```
 
 ## Examples
 
 ```bash
-calcs examples/aln.sam -r examples/ref.fa > aln_cs.sam
+calcs examples/example.sam -r examples/ref.fa > example_cs.sam
 ```
 
-If input file is a BAM/CRAN format, you can use `samtools view`.
+If the input file is a BAM/CRAN format, you can use `samtools view`.
 
 ```bash
-samtools view examples/aln.bam |
-  calcs -l -r examples/ref.fa
+samtools view examples/example.bam |
+  calcs -l -r examples/ref.fa |
+  samtools sort > example_cslong.bam
 ```
+
+## 'paftools.js sam2paf' vs 'calcs'
+
+|                     | sam2paf | calcs      |
+| ------------------- | ------- | ---------- |
+| Speed               | +       | -          |
+| Report substitution | -       | +          |
+| Output format       | PAF     | SAM or PAF |
+|                     |         |            |
 
 ## Citation
 
