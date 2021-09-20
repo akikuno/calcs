@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.1",
     entry_points={
         'console_scripts': [
-            'calcs=src.calcs.main:main',
+            'calcs=calcs.main:main',
         ],
     },
     author="Akihiro Kuno",
