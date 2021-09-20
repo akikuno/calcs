@@ -44,6 +44,9 @@ def to_paf(alignment, cstag, len_clip, start, refseq, refseq_anno) -> str:
     return '\t'.join(paf + _others)
 
 
-def insert_cstag(alignment: str, cstag: str) -> str:
-    return alignment.replace("rl:i:", cstag + "\trl:i:")
-    # return re.sub("(\trl:i:0)", "\t" + cstag + r"\1", alignment)
+def insert_cstag(alignment: str, cstag: str, is_minimap2: bool) -> str:
+    if is_minimap2:
+        align_with_cstag = alignment.replace("rl:i:", cstag + "\trl:i:")
+    else:
+        align_with_cstag = alignment + "\t" + cstag
+    return align_with_cstag
