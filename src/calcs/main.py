@@ -9,12 +9,12 @@ from concurrent.futures import ProcessPoolExecutor
 from itertools import compress
 
 # custom modules
-import parse
-import load
-import trim
-import annotate
-import call_cstag
-import convert
+from calcs import parse
+from calcs import load
+from calcs import trim
+from calcs import annotate
+from calcs import call_cstag
+from calcs import convert
 
 ###############################################################################
 # MAIN
