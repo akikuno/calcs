@@ -30,9 +30,9 @@ calcs aln.sam -r ref.fasta > aln_cs.sam
 ## Options
 
 ```bash
--r, --reference: reference fasta file (required
+-r, --reference: reference fasta file (required)
 -l, --long: Encoding the long form of cs tag (default: false)
--@, --threads INT: Number of threads to use (default: 1)
+-t, --threads INT: Number of threads to use (default: 1)
 ```
 
 ## Examples
