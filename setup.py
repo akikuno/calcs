@@ -8,16 +8,19 @@ setuptools.setup(
     version="0.0.1",
     entry_points={
         'console_scripts': [
-            'calcs=calcs:main',
+            'calcs=src.calcs.main:main',
         ],
     },
     author="Akihiro Kuno",
     author_email="akuno@md.tsukuba.ac.jp",
-    description="Generate CS tag from SAM file",
+    description="call CS tag to SAM file",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/akikuno/calcs",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(
+        where='src',
+    ),
+    package_dir={"": "src"},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
