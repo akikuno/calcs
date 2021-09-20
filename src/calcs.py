@@ -10,7 +10,7 @@ from itertools import compress
 
 # custom modules
 import parse
-import open
+import load
 import trim
 import annotate
 import call_cstag
@@ -20,8 +20,8 @@ import convert
 # MAIN
 ###############################################################################
 
-# ARGS_QUERY = open("tests/subindel/subindel.sam") # ?-------------------
-# ARGS_REFERENCE = "tests/random_100bp.fa" # ?-------------------
+# ARGS_QUERY = open("../tests/data/subindel/subindel.sam") # ?-------------------
+# ARGS_REFERENCE = "../tests/data/random_100bp.fa" # ?-------------------
 
 
 def main():
@@ -30,36 +30,34 @@ def main():
 
     # Parse Query SAM file
     t = tt()  # ?-------------------
-    QUESAM = tuple(open.sam(ARGS_QUERY))
+    QUESAM = tuple(load.sam(ARGS_QUERY))
     readsam_time = tt() - t  # ?-------------------
     print(f"Read Query: {readsam_time:.2} sec",
           file=sys.stderr)  # ?-------------------
 
     t = tt()  # ?-------------------
     is_header = [_.startswith("@") for _ in QUESAM]
-    is_alignment = [not _ for _ in is_header]
-
     HEADER = tuple(list(compress(QUESAM, is_header)))
     IS_MINIMAP2 = any(["minimap2" in _ for _ in HEADER])
-    ALIGNMENTS = tuple(list(compress(QUESAM, is_alignment)))
 
-    is_mapped = ["*" != s.split("\t")[5] for s in ALIGNMENTS]
+    is_alignment = [not _ for _ in is_header]
+    alignments = tuple(list(compress(QUESAM, is_alignment)))
+    is_mapped = ["*" != s.split("\t")[5] for s in alignments]
     is_unmapped = [not _ for _ in is_mapped]
 
-    ALIGNMENTS_MAPPED = tuple(list(compress(ALIGNMENTS, is_mapped)))
-    ALIGNMENTS_UNMAPPED = tuple(list(compress(ALIGNMENTS, is_unmapped)))
+    ALIGNMENTS_MAPPED = tuple(list(compress(alignments, is_mapped)))
+    ALIGNMENTS_UNMAPPED = tuple(list(compress(alignments, is_unmapped)))
 
+    RNAMES = tuple([s.split("\t")[2] for s in ALIGNMENTS_MAPPED])
     STARTS = tuple([int(s.split("\t")[3]) - 1 for s in ALIGNMENTS_MAPPED])
     CIGARS = tuple([s.split("\t")[5] for s in ALIGNMENTS_MAPPED])
-    QUESEQS = tuple([s.split("\t")[9] for s in ALIGNMENTS_MAPPED])
+    QUESEQS = tuple([s.split("\t")[9].upper() for s in ALIGNMENTS_MAPPED])
     print(f"Parse sam: {tt() - t:.2} sec",
           file=sys.stderr)  # ?-------------------
 
     # Parse Reference FASTA file
-    REFFASTA = tuple(open.fasta(ARGS_REFERENCE))
-    is_alignment = [not _.startswith(">") for _ in REFFASTA]
-
-    REFSEQS = tuple(list(compress(REFFASTA, is_alignment)) * len(QUESEQS))
+    dict_fasta = load.fasta(ARGS_REFERENCE)
+    REFSEQS = tuple([dict_fasta[rname] for rname in RNAMES])
 
     # Trim start sites in reference sequence
     t = tt()  # ?-------------------

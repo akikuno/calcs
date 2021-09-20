@@ -45,7 +45,7 @@ calcs aln.sam -r ref.fasta -t 4 > aln_cs.sam
 ## Options
 
 ```bash
--l, --long: output the cs tag in  the long form 
+-l, --long: output the cs tag in  the long form
 -t, --threads INT: number of threads to use (default: 1)
 ```
 
@@ -65,12 +65,12 @@ samtools view examples/example.bam |
 
 ## `paftools.js sam2paf` vs `calcs`
 
-|                            | sam2paf                    | calcs      |
-| -------------------------- | -------------------------- | ---------- |
-| Speed                      | +                          | -          |
-| Report substitution        | + (if SAM includes MD tag) | +          |
-| Report CS tag in long form | + (if SAM includes MD tag) | +          |
-| Output format              | PAF                        | SAM or PAF |
+|                     | sam2paf                    | calcs      |
+| ------------------- | -------------------------- | ---------- |
+| Speed               | +                          | -          |
+| Report substitution | + (if SAM includes MD tag) | +          |
+| Report CS tag       | + (if SAM includes MD tag) | +          |
+| Output format       | PAF                        | SAM or PAF |
 
 ## Citation
 
