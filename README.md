@@ -63,14 +63,14 @@ samtools view examples/example.bam |
   samtools sort > example_cslong.bam
 ```
 
-## 'paftools.js sam2paf' vs 'calcs'
+## `paftools.js sam2paf` vs `calcs`
 
-|                     | sam2paf | calcs      |
-| ------------------- | ------- | ---------- |
-| Speed               | +       | -          |
-| Report substitution | -       | +          |
-| Output format       | PAF     | SAM or PAF |
-|                     |         |            |
+|                            | sam2paf                    | calcs      |
+| -------------------------- | -------------------------- | ---------- |
+| Speed                      | +                          | -          |
+| Report substitution        | + (if SAM includes MD tag) | +          |
+| Report CS tag in long form | + (if SAM includes MD tag) | +          |
+| Output format              | PAF                        | SAM or PAF |
 
 ## Citation
 
