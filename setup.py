@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name="calcs",
-    version="0.0.1",
+    version="0.0.0.0.0.556",
     entry_points={
         'console_scripts': [
             'calcs=calcs.main:main',

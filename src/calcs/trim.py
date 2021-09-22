@@ -1,12 +1,20 @@
 import re
 
 ###############################################################################
-# Trim start sites in reference
+# Trim unmapped_region in reference
 ###############################################################################
 
+p_clip = re.compile(r"[0-9]+(H|S)")
+p = re.compile(r"M|D")
 
-def starts(ref_seq: str, start: int) -> str:
-    return ref_seq[start or None:]
+
+def unmapped_region(refseq: str, start: int, cigar: int) -> str:
+    '''Trim unmapped_region in reference'''
+    _cigar = p_clip.sub("", cigar, count=2)
+    _cigar = re.sub(r"[0-9]*I", "", _cigar)
+    end = start + sum(map(int, filter(None, p.split(_cigar))))
+    return refseq[start: end]
+
 
 ###############################################################################
 # Trim soft-clip in query

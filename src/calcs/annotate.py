@@ -17,8 +17,9 @@ def insertion(ref, cigar):
             ins_num = int(_cigar.replace("I", ""))
             append("I" * ins_num)
         else:
-            cigar_num = sum([int(s or 0)
-                            for s in re.split("[MDNPX=]", _cigar)])
+            cigar_num = sum(
+                [int(s or 0) for s in re.split("[MDNPX=]", _cigar)]
+            )
             end_idx = start_idx + cigar_num
             append(ref[start_idx or None:end_idx or None])
             start_idx += cigar_num

@@ -58,7 +58,7 @@ calcs examples/example.sam -r examples/ref.fa > example_cs.sam
 If the input file is a BAM/CRAN format, you can use `samtools view`.
 
 ```bash
-samtools view examples/example.bam |
+samtools -h view examples/example.bam |
   calcs -l -r examples/ref.fa |
   samtools sort > example_cslong.bam
 ```
@@ -72,5 +72,4 @@ samtools view examples/example.bam |
 | Report CS tag       | + (if SAM includes MD tag) | +          |
 | Output format       | PAF                        | SAM or PAF |
 
-## Citation
 
