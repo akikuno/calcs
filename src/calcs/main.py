@@ -5,7 +5,7 @@
 # buidin modules
 import sys
 from concurrent.futures import ProcessPoolExecutor
-from itertools import compress
+from itertools import compress, chain
 
 # custom modules
 from calcs import parse
@@ -43,57 +43,61 @@ def main():
     STARTS = tuple([int(s.split("\t")[3]) - 1 for s in ALIGNMENTS_MAPPED])
     CIGARS = tuple([s.split("\t")[5] for s in ALIGNMENTS_MAPPED])
     QUESEQS = tuple([s.split("\t")[9].upper() for s in ALIGNMENTS_MAPPED])
+    CHUNKSIZE = int(len(QUESEQS)/ARGS_THREADS)
 
     # Trim soft clip into query sequence
-    LEN_CLIPS = list(map(trim.get_softclip_lengths, CIGARS))
+    with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
+        LEN_CLIPS = list(executor.map(
+            trim.get_softclip_lengths, CIGARS,
+            chunksize=CHUNKSIZE)
+        )
 
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-        _ = list(
-            executor.map(trim.softclips, QUESEQS, LEN_CLIPS,
-                         chunksize=int(len(QUESEQS)/ARGS_THREADS))
+        QUESEQS_TRIMMED = executor.map(
+            trim.softclips, QUESEQS, LEN_CLIPS,
+            chunksize=CHUNKSIZE
         )
-    QUESEQS_TRIMMED = tuple(_)
 
     # Parse Reference FASTA file
     dict_fasta = load.fasta(ARGS_REFERENCE)
     REFSEQS = (dict_fasta[rname] for rname in RNAMES)
+    REFLENS = (len(dict_fasta[rname]) for rname in RNAMES)
 
     # Trim start sites in reference sequence
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-        _ = executor.map(trim.unmapped_region, REFSEQS, STARTS, CIGARS,
-                         chunksize=int(len(STARTS)/ARGS_THREADS))
-    REFSEQS_TRIMMED = tuple(_)
+        REFSEQS_TRIMMED = executor.map(
+            trim.unmapped_region, REFSEQS, STARTS, CIGARS,
+            chunksize=CHUNKSIZE
+        )
 
     # Annotate Insertion in reference sequence
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-        _ = list(executor.map(annotate.insertion, REFSEQS_TRIMMED, CIGARS))
-        REFSEQS_ANNO = tuple(_)
+        REFSEQS_ANNO = list(
+            executor.map(
+                annotate.insertion, REFSEQS_TRIMMED, CIGARS,
+                chunksize=CHUNKSIZE)
+        )
 
     # Annotate Deletion into query seuqence
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-        _ = list(
-            executor.map(
-                annotate.deletion, QUESEQS_TRIMMED, CIGARS,
-                chunksize=int(len(QUESEQS_TRIMMED)/ARGS_THREADS))
-        )
-        QUESEQS_ANNO = tuple(_)
+        QUESEQS_ANNO = executor.map(
+            annotate.deletion, QUESEQS_TRIMMED, CIGARS,
+            chunksize=CHUNKSIZE)
 
     # Calculate CS tags
     with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-        cstags = list(
-            executor.map(
-                call_cstag.long_form, REFSEQS_ANNO, QUESEQS_ANNO,
-                chunksize=int(len(REFSEQS_ANNO)/ARGS_THREADS))
-        )
+        cstags = executor.map(
+            call_cstag.long_form, REFSEQS_ANNO, QUESEQS_ANNO,
+            chunksize=CHUNKSIZE)
 
     if ARGS_LONG:
-        CSTAGS = tuple(cstags)
+        CSTAGS = cstags
     else:
         with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-            _ = list(executor.map(call_cstag.short_form, cstags,
-                                  chunksize=int(len(cstags)/ARGS_THREADS)))
-            CSTAGS = tuple(_)
-
+            CSTAGS = executor.map(
+                call_cstag.short_form, cstags,
+                chunksize=CHUNKSIZE
+            )
     # Output PAF or SAM
     if ARGS_PAF:
         with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
@@ -101,8 +105,9 @@ def main():
                 executor.map(
                     convert.to_paf,
                     ALIGNMENTS_MAPPED, CSTAGS, LEN_CLIPS,
-                    STARTS, REFSEQS, REFSEQS_ANNO,
-                    chunksize=int(len(ALIGNMENTS_MAPPED)/ARGS_THREADS))
+                    STARTS, REFLENS, REFSEQS_ANNO,
+                    chunksize=CHUNKSIZE
+                )
             )
         try:
             sys.stdout.write('\n'.join(paf_cstags + [""]))
@@ -110,18 +115,16 @@ def main():
             pass
     else:
         with ProcessPoolExecutor(max_workers=ARGS_THREADS) as executor:
-            alignment_cstags = list(
-                executor.map(
-                    convert.insert_cstag, ALIGNMENTS_MAPPED, CSTAGS,
-                    [IS_MINIMAP2] * len(ALIGNMENTS_MAPPED),
-                    chunksize=int(len(ALIGNMENTS_MAPPED)/ARGS_THREADS))
-            )
+            ALIGNMENT_CSTAGS = executor.map(
+                convert.insert_cstag,
+                ALIGNMENTS_MAPPED,
+                CSTAGS,
+                [IS_MINIMAP2] * len(ALIGNMENTS_MAPPED),
+                chunksize=CHUNKSIZE)
 
-        SAM_CSTAGS = HEADER + \
-            tuple(alignment_cstags) + \
-            tuple(ALIGNMENTS_UNMAPPED)
+        SAM_CSTAGS = chain(HEADER, ALIGNMENT_CSTAGS, ALIGNMENTS_UNMAPPED)
         try:
-            sys.stdout.write('\n'.join(SAM_CSTAGS + ("",)))
+            sys.stdout.write('\n'.join(map(str, SAM_CSTAGS)))
         except (BrokenPipeError, IOError):
             pass
 
