@@ -45,7 +45,7 @@ calcs aln.sam -r ref.fasta -t 4 > aln_cs.sam
 ## Options
 
 ```bash
--l, --long: output the cs tag in  the long form
+-l, --long: output the cs tag in the long form
 -t, --threads INT: number of threads to use (default: 1)
 ```
 
