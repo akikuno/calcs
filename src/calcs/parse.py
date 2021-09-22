@@ -24,6 +24,7 @@ def parse_args():
                         type=int,
                         metavar="threads",
                         help="Number of threads [default: 1]",)
+    parser.add_argument('-v', '--version', action='version', version='0.0.1')
     args = parser.parse_args()
     os_cpus = int(os.cpu_count())  # len(os.sched_getaffinity(0))
     if args.threads > os_cpus:
