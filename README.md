@@ -1,7 +1,6 @@
 ## Description
 
 Append the [minimap2's CS tag](https://github.com/lh3/minimap2#cs) to SAM file.  
-If the CS tag is already present, this command will overwrite the existing tag.
 
 
 > :warning: This tool will be maintained until [the samtools team implements official CS caller](https://github.com/samtools/samtools/issues/1264).
