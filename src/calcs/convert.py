@@ -17,7 +17,7 @@ def determine_strand(flag: int) -> str:
     return _strand
 
 
-def to_paf(alignment, cstag, len_clip, start, refseq, refseq_anno) -> str:
+def to_paf(alignment, cstag, len_clip, start, reflen, refseq_anno) -> str:
     alignment_fields = alignment.split("\t")
     start_clips, end_clips = len_clip
     _quename = alignment_fields[0]
@@ -26,7 +26,7 @@ def to_paf(alignment, cstag, len_clip, start, refseq, refseq_anno) -> str:
     _queend = str(len(alignment_fields[9]) - end_clips)
     _strand = determine_strand(int(alignment_fields[1]))
     _refname = alignment_fields[2]
-    _reflen = str(len(refseq))
+    _reflen = str(reflen)
     _refstart = str(start)
     _refend = str(len(refseq_anno.replace("I", "")) + start)
     if "cs:Z:=" in cstag:
