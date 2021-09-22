@@ -14,11 +14,11 @@ You can install `calcs` using pip:
 pip install calcs
 ```
 
-Alternatively, you can get `calcs` from bioconda:
+<!-- Alternatively, you can get `calcs` from bioconda:
 
 ```
 conda install -c bioconda calcs
-```
+``` -->
 
 ## Usage
 
@@ -58,7 +58,7 @@ calcs examples/example.sam -r examples/ref.fa > example_cs.sam
 If the input file is a BAM/CRAN format, you can use `samtools view`.
 
 ```bash
-samtools -h view examples/example.bam |
+samtools view examples/example.bam |
   calcs -l -r examples/ref.fa |
   samtools sort > example_cslong.bam
 ```
