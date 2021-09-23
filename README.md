@@ -1,6 +1,6 @@
 ## Description
 
-Append the [minimap2's CS tag](https://github.com/lh3/minimap2#cs) to SAM file.  
+`calcs` is a command line tool to append the [minimap2's CS tag](https://github.com/lh3/minimap2#cs) to SAM file.  
 
 
 > :warning: This tool will be maintained until [the samtools team implements official CS caller](https://github.com/samtools/samtools/issues/1264).
