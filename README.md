@@ -13,11 +13,11 @@ You can install `calcs` using pip:
 pip install calcs
 ```
 
-<!-- Alternatively, you can get `calcs` from bioconda:
+Alternatively, you can get `calcs` from bioconda:
 
 ```
 conda install -c bioconda calcs
-``` -->
+```
 
 ## Usage
 
