@@ -1,3 +1,8 @@
+![platforms](https://anaconda.org/bioconda/calcs/badges/platforms.svg)
+![conda](https://anaconda.org/bioconda/calcs/badges/installer/conda.svg)
+[![PyPI version](https://badge.fury.io/py/calcs.svg)](https://badge.fury.io/py/calcs)
+![licence](https://anaconda.org/bioconda/calcs/badges/license.svg)
+
 ## Description
 
 `calcs` is a command-line tool to append a [minimap2's CS tag](https://github.com/lh3/minimap2#cs) to a SAM file.  
