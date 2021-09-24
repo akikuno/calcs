@@ -67,8 +67,7 @@ Here is the comparison between `sam2paf` and `calcs`.
 |                     | sam2paf                    | calcs      |
 | ------------------- | -------------------------- | ---------- |
 | Speed               | +                          | -          |
-| Report substitution | + (if SAM includes MD tag) | +          |
-| Report CS tag       | + (if SAM includes MD tag) | +          |
+| Generate a CS tag       | + (if SAM includes a MD tag) | +          |
 | Output format       | PAF                        | SAM or PAF |
 
 
