@@ -1,9 +1,9 @@
 ## Description
 
-`calcs` is a command-line tool to append the [minimap2's CS tag](https://github.com/lh3/minimap2#cs) to a SAM file.  
+`calcs` is a command-line tool to append a [minimap2's CS tag](https://github.com/lh3/minimap2#cs) to a SAM file.  
 
 
-> :warning: This tool will be maintained until [the samtools team implements official CS caller](https://github.com/samtools/samtools/issues/1264).
+> :warning: This tool will be maintained until [the samtools team implements the official CS tag caller](https://github.com/samtools/samtools/issues/1264).
 
 ## Installation
 
@@ -28,7 +28,7 @@ calcs [options] <in.sam> -r/--reference <in.fasta>
 ## Options
 
 ```bash
--l/--long: output the cs tag in the long form
+-l/--long: output a cs tag in the long form
 -t/--threads [INT]: number of threads to use (default: 1)
 ```
 
@@ -61,13 +61,13 @@ samtools view examples/example.bam |
 
 ## `paftools.js sam2paf` vs `calcs`
 
-[paftools.js sam2paf](https://github.com/lh3/minimap2/blob/master/misc/README.md) is anoter command to generate CS tag.  
+[paftools.js sam2paf](https://github.com/lh3/minimap2/blob/master/misc/README.md) is anoter command to generate a CS tag.  
 Here is the comparison between `sam2paf` and `calcs`.
 
 |                     | sam2paf                    | calcs      |
 | ------------------- | -------------------------- | ---------- |
 | Speed               | +                          | -          |
-| Generate a CS tag       | + (if SAM includes a MD tag) | +          |
+| Call a CS tag       | + (if SAM includes a MD tag) | +          |
 | Output format       | PAF                        | SAM or PAF |
 
 
