@@ -1,7 +1,6 @@
-![platforms](https://anaconda.org/bioconda/calcs/badges/platforms.svg)
-![conda](https://anaconda.org/bioconda/calcs/badges/installer/conda.svg)
-[![PyPI version](https://badge.fury.io/py/calcs.svg)](https://badge.fury.io/py/calcs)
-![licence](https://anaconda.org/bioconda/calcs/badges/license.svg)
+[![licence](https://anaconda.org/bioconda/calcs/badges/license.svg)](https://opensource.org/search/node/MIT)
+[![conda](https://anaconda.org/bioconda/calcs/badges/installer/conda.svg)](https://anaconda.org/bioconda/calcs)
+[![PyPI version](https://badge.fury.io/py/calcs.svg)](https://pypi.org/project/calcs/)
 
 ## Description
 
