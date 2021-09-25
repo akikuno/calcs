@@ -1,4 +1,4 @@
-[![licence](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/search/node/MIT)
+[![licence](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://choosealicense.com/licenses/mit/)
 [![PyPI version](https://img.shields.io/badge/Install%20with-PyPI-brightgreen.svg?style=flat-square)](https://pypi.org/project/calcs/)
 [![install with bioconda](https://img.shields.io/badge/Install%20with-Bioconda-brightgreen.svg?style=flat-square)](https://anaconda.org/bioconda/calcs)
 
