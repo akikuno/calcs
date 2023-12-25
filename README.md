@@ -4,10 +4,17 @@
 
 ## Description
 
-`calcs` is a command-line tool to append a [minimap2's CS tag](https://github.com/lh3/minimap2#cs) to a SAM file.  
+`calcs` is a command-line tool specifically designed to append a [minimap2's cs tag](https://github.com/lh3/minimap2#cs) to a SAM file.  
 
+> [!IMPORTANT]
+> Since `calcs` requires the computational time, we recommend using `calcs` only when your SAM file does not have MD tags.
 
-> :warning: This tool will be maintained until [the samtools team implements the official CS tag caller](https://github.com/samtools/samtools/issues/1264).
+> [!NOTE]
+> [`cstag-cli`](https://github.com/akikuno/cstag-cli) and [paftools.js sam2paf](https://github.com/lh3/minimap2/blob/master/misc/README.md) are alternative tools that also facilitate the appending of a cs tag to sequence alignment files. 
+> For a detailed comparison of these tools, see [the comparison](https://github.com/akikuno/calcs?tab=readme-ov-file#comparison-with-other-tools)
+
+> [!NOTE]
+> This tool will be maintained until [the samtools team implements the official cs tag caller](https://github.com/samtools/samtools/issues/1264).
 
 ## Installation
 
@@ -39,16 +46,16 @@ calcs [options] <in.sam> -r/--reference <in.fasta>
 ## Examples
 
 ```bash
-# CS tag (short form)
+# cs tag (short form)
 calcs examples/example.sam --reference examples/ref.fa > example_cs.sam
 
-# CS tag (long form)
+# cs tag (long form)
 calcs examples/example.sam --reference examples/ref.fa --long > example_cslong.sam
 
-# PAF format with CS tag (short form)
+# PAF format with cs tag (short form)
 calcs examples/example.sam --reference examples/ref.fa --paf > example_cs.paf
 
-# PAF format with CS tag (long form)
+# PAF format with cs tag (long form)
 calcs examples/example.sam --reference examples/ref.fa --paf --long > example_cslong.paf
 
 # Multiprocessing
@@ -63,15 +70,19 @@ samtools view examples/example.bam |
   samtools sort > example_cslong.bam
 ```
 
-## `paftools.js sam2paf` vs `calcs`
+## Comparison with other tools
 
-[paftools.js sam2paf](https://github.com/lh3/minimap2/blob/master/misc/README.md) is anoter command to generate a CS tag.  
-Here is the comparison between `sam2paf` and `calcs`.
+Here is the brief comparison between `calcs`, `cstag-cli`, and `sam2paf`.
 
-|                     | sam2paf                    | calcs      |
-| ------------------- | -------------------------- | ---------- |
-| Speed               | +                          | -          |
-| Call a CS tag       | + (if SAM includes a MD tag) | +          |
-| Output format       | PAF                        | SAM or PAF |
+|               | calcs         |  cstag-cli                |  sam2paf            |
+| ------------- | ------------- | ------------------------- | ------------------- |
+| Input         | SAM and FASTA |  SAM or BAM with a MD tag |  SAM with a MD tag  |
+| Output format |  SAM or PAF   |  SAM or BAM               |  PAF                |
+| Speed         | -             |  +                        |  +                  |
 
 
+### Tool Selection Guide
+
+- `calcs`: If your SAM file does not have MD tags, we recommend using `calcs`.
+- `cstag-cli`: If your SAM or BAM file has MD tags and you expect SAM or BAM output, we recommend using `cstag-cli`.
+- `sam2paf`: If your SAM file has MD tags and you expect PAF output, we recommend using `sam2paf`.
