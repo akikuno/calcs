@@ -6,13 +6,11 @@
 
 `calcs` is a command-line tool specifically designed to append a [minimap2's cs tag](https://github.com/lh3/minimap2#cs) to a SAM file.  
 
-> [!IMPORTANT]
+> [!CAUTION]  
 > If your SAM file has MD tags, we recommend using [`cstag-cli`](https://github.com/akikuno/cstag-cli) or [`paftools.js sam2paf`](https://github.com/lh3/minimap2/blob/master/misc/README.md).  
-> Since `calcs` requires computational time, even if your SAM/BAM files do not have MD tags, **we recommend using [`samtools calmd`](https://www.htslib.org/doc/samtools-calmd.html) to add MD tags, and `cstag-cli` to add cs tags.**  
-> See [the comparison](https://github.com/akikuno/calcs?tab=readme-ov-file#comparison-with-other-tools) for details.
+> Even if your SAM/BAM files do not have MD tags, **we recommend using [`samtools calmd`](https://www.htslib.org/doc/samtools-calmd.html) to add MD tags, and `cstag-cli` to add cs tags** since `calcs` requires computational time.  
+> See [the *Comparison with other tools* section](https://github.com/akikuno/calcs?tab=readme-ov-file#comparison-with-other-tools) for details.
 
-> [!NOTE]
-> This tool will be maintained until [the samtools team implements the official cs tag caller](https://github.com/samtools/samtools/issues/1264).
 
 ## Installation
 
@@ -79,8 +77,5 @@ Here is the brief comparison between `calcs`, `cstag-cli`, and `sam2paf`.
 | Speed         | Slow🐢             |  Fast🐇                        |  Fast🐇                  |
 
 
-### Tool Selection Guide
-
-- `calcs`: when a SAM file does not have MD tags.
-- `cstag-cli`: when a SAM or BAM file has MD tags and you expect SAM or BAM output.
-- `sam2paf`: when a SAM file has MD tags and you expect PAF output.
+Instead of `calcs`, we recommend using either `cstag-cli` or `sam2paf`.  
+If a SAM file lacks MD tags, you can first add these tags using `samtools calmd` and then apply `cstag-cli`.  
