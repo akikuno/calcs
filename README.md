@@ -8,7 +8,7 @@
 
 > [!IMPORTANT]
 > Since `calcs` requires the computational time, we recommend using `calcs` only when your SAM file does not have MD tags.
-> If your SAM file has MD tags, we recommend using [`cstag-cli`](https://github.com/akikuno/cstag-cli) or [paftools.js sam2paf](https://github.com/lh3/minimap2/blob/master/misc/README.md). See [the comparison](https://github.com/akikuno/calcs?tab=readme-ov-file#comparison-with-other-tools) for details.
+> If your SAM file has MD tags, we recommend using [`cstag-cli`](https://github.com/akikuno/cstag-cli) or [`paftools.js sam2paf`](https://github.com/lh3/minimap2/blob/master/misc/README.md). See [the comparison](https://github.com/akikuno/calcs?tab=readme-ov-file#comparison-with-other-tools) for details.
 
 > [!NOTE]
 > This tool will be maintained until [the samtools team implements the official cs tag caller](https://github.com/samtools/samtools/issues/1264).
