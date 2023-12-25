@@ -80,6 +80,6 @@ Here is the brief comparison between `calcs`, `cstag-cli`, and `sam2paf`.
 
 ### Tool Selection Guide
 
-- `calcs`: If your SAM file does not have MD tags, we recommend using `calcs`.
-- `cstag-cli`: If your SAM or BAM file has MD tags and you expect SAM or BAM output, we recommend using `cstag-cli`.
-- `sam2paf`: If your SAM file has MD tags and you expect PAF output, we recommend using `sam2paf`.
+- `calcs`: when a SAM file does not have MD tags.
+- `cstag-cli`: when a SAM or BAM file has MD tags and you expect SAM or BAM output.
+- `sam2paf`: when a SAM file has MD tags and you expect PAF output.
