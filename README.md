@@ -8,10 +8,7 @@
 
 > [!IMPORTANT]
 > Since `calcs` requires the computational time, we recommend using `calcs` only when your SAM file does not have MD tags.
-
-> [!NOTE]
-> [`cstag-cli`](https://github.com/akikuno/cstag-cli) and [paftools.js sam2paf](https://github.com/lh3/minimap2/blob/master/misc/README.md) are alternative tools that also facilitate the appending of a cs tag to sequence alignment files. 
-> For a detailed comparison of these tools, see [the comparison](https://github.com/akikuno/calcs?tab=readme-ov-file#comparison-with-other-tools)
+> If your SAM file has MD tags, we recommend using [`cstag-cli`](https://github.com/akikuno/cstag-cli) or [paftools.js sam2paf](https://github.com/lh3/minimap2/blob/master/misc/README.md). See [the comparison](https://github.com/akikuno/calcs?tab=readme-ov-file#comparison-with-other-tools) for details.
 
 > [!NOTE]
 > This tool will be maintained until [the samtools team implements the official cs tag caller](https://github.com/samtools/samtools/issues/1264).
@@ -74,11 +71,11 @@ samtools view examples/example.bam |
 
 Here is the brief comparison between `calcs`, `cstag-cli`, and `sam2paf`.
 
-|               | calcs         |  cstag-cli                |  sam2paf            |
+|               | `calcs`         |  `cstag-cli`                |  `sam2paf`            |
 | ------------- | ------------- | ------------------------- | ------------------- |
 | Input         | SAM and FASTA |  SAM or BAM with a MD tag |  SAM with a MD tag  |
 | Output format |  SAM or PAF   |  SAM or BAM               |  PAF                |
-| Speed         | -             |  +                        |  +                  |
+| Speed         | Slow🐢             |  Fast🐇                        |  Fast🐇                  |
 
 
 ### Tool Selection Guide
