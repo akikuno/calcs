@@ -11,7 +11,6 @@
 > Since `calcs` requires computational time, even if your SAM/BAM files do not have MD tags, **we recommend using [`samtools calmd`](https://www.htslib.org/doc/samtools-calmd.html) to add MD tags, and `cstag-cli` to add cs tags.**  
 > See [the comparison](https://github.com/akikuno/calcs?tab=readme-ov-file#comparison-with-other-tools) for details.
 
-we recommend using `calcs` only when your SAM file does not have MD tags.
 > [!NOTE]
 > This tool will be maintained until [the samtools team implements the official cs tag caller](https://github.com/samtools/samtools/issues/1264).
 
