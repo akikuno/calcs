@@ -7,7 +7,7 @@
 `calcs` is a command-line tool specifically designed to append a [minimap2's cs tag](https://github.com/lh3/minimap2#cs) to a SAM file.  
 
 > [!CAUTION]  
-> # `calcs` is deprecated.
+> ### `calcs` is deprecated.
 > If your SAM file has MD tags, we recommend using [`cstag-cli`](https://github.com/akikuno/cstag-cli) or [`paftools.js sam2paf`](https://github.com/lh3/minimap2/blob/master/misc/README.md).  
 > Even if your SAM/BAM files do not have MD tags, **we recommend using [`samtools calmd`](https://www.htslib.org/doc/samtools-calmd.html) to add MD tags, and `cstag-cli` to add cs tags** since `calcs` requires computational time.  
 > See [the *Comparison with other tools* section](https://github.com/akikuno/calcs?tab=readme-ov-file#comparison-with-other-tools) for details.
